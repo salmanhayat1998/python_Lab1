@@ -1,0 +1,58 @@
+from game import Game
+from player import Player,Bot
+from test_CountingBot3 import ABot, BBot
+import os,contextlib
+from game import State
+import random
+
+class CountingBot(Bot):
+
+    failed_missions_been_on = {}
+
+    def onGameRevealed(self, players, spies):
+        # reset dictionary by assigning 0 to all keys 
+        self.failed_missions_been_on = {player: 0 for player in players}
+
+    def onMissionComplete(self, num_sabotages):
+        # increase mission fail value against player keys if mission sabotage
+        if num_sabotages > 0:
+            for player in self.others():
+                self.failed_missions_been_on[player] += 1
+
+    def vote(self, team):
+        if self.spy:
+            return False  # Always vote against the mission as a spy
+        else:
+            # Find the two players with the highest failure count
+            # create a new list
+            # sort it by their mission fail value in decending order
+            # assign this sorted list to new top players
+            # perform slicing operation and take first 2 elements [:2]
+            sorted_players = sorted(self.failed_missions_been_on.keys(), key=lambda p: self.failed_missions_been_on[p], reverse=True)
+            top_players = sorted_players[:2]
+
+            # Check if any of the top players are in the team
+            # vote against mission if true
+            # else vote for mission
+            is_player_in_team = False
+
+            for player in top_players:
+                if player in team:
+                    is_player_in_team = True
+                    break
+            return not is_player_in_team
+            
+    def sabotage(self):
+        return True
+
+    def select(self, players, count):
+        # Sort players based on their failure count
+        sorted_players = sorted(self.failed_missions_been_on.keys(), key=lambda p: self.failed_missions_been_on[p])
+        
+        # Select the players with the lowest failure count plus yourself
+        selected_team = sorted_players[:count]  # -1 to account for yourself
+        selected_team.append(self)
+
+        return list(set(selected_team))
+
+
